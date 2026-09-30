@@ -348,6 +348,10 @@ def train(
         if val_dataset is not None and epochs_without_improvement >= patience:
             break
 
+    if checkpoint_dir is not None:
+        Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+        torch.save(model.state_dict(), Path(checkpoint_dir) / "final_model.pt")
+
     return {"model": model, "history": history, "best_val_macro_f1": best_macro_f1}
 
 

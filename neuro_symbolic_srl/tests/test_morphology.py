@@ -6,6 +6,7 @@ alignment against a real Indic subword tokenizer.
 """
 from __future__ import annotations
 
+import pytest
 import torch
 
 from src.data_pipeline.dataset import SRLCollator, SRLDataset, SRLExample
@@ -17,7 +18,9 @@ from src.data_pipeline.hdtb_parser import (
     parse_conllu,
     sentence_to_bio,
 )
+from src.data_pipeline.lemmatizer import guess_noun_lemma, guess_verb_lemma
 from src.data_pipeline.morphology_extractor import MorphologyExtractor
+from src.ontology.indowordnet_client import IndoWordNetClient
 
 # ---------------------------------------------------------------------------
 # MorphologyExtractor
@@ -395,3 +398,80 @@ class TestSRLDataset:
         collated = self.collator(batch)
         # predicate indicator marks a whole subword group, so just assert >=1
         assert (collated["predicate_mask"].sum(dim=1) >= 1).all()
+
+
+# ---------------------------------------------------------------------------
+# lemmatizer: dictionary-validated verb/noun surface-form guessers
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def iwn_client() -> IndoWordNetClient:
+    return IndoWordNetClient()
+
+
+class TestGuessVerbLemma:
+    def test_regular_perfective_forms_resolve_to_infinitive(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        cases = {
+            "खोला": "खोलना",
+            "देखा": "देखना",
+            "पढ़ी": "पढ़ना",
+            "सुनी": "सुनना",
+            "बोला": "बोलना",
+            "मारा": "मारना",
+            "लिखा": "लिखना",
+            "सोचा": "सोचना",
+        }
+        for surface, expected in cases.items():
+            assert guess_verb_lemma(surface, client=iwn_client) == expected
+
+    def test_glide_insertion_forms_resolve_to_infinitive(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        # खाना/बनाना insert a "य" glide before the perfective matra
+        # (खाया, not "खाआ"); these need the "या" suffix, not bare "ा".
+        assert guess_verb_lemma("खाया", client=iwn_client) == "खाना"
+        assert guess_verb_lemma("बनाया", client=iwn_client) == "बनाना"
+
+    def test_already_infinitive_form_is_returned_unchanged(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        assert guess_verb_lemma("खोलना", client=iwn_client) == "खोलना"
+
+    def test_unrecognized_word_falls_back_to_surface_form(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        assert guess_verb_lemma("zzzznotaword123", client=iwn_client) == "zzzznotaword123"
+
+    def test_suppletive_irregular_perfective_is_a_known_gap(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        # गया (जाना's suppletive perfective) cannot be recovered by suffix
+        # stripping — documented limitation, not a silent success.
+        assert guess_verb_lemma("गया", client=iwn_client) == "गया"
+
+
+class TestGuessNounLemma:
+    def test_masculine_oblique_forms_resolve_to_direct_case(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        cases = {
+            "बच्चे": "बच्चा",
+            "लड़के": "लड़का",
+            "घोड़े": "घोड़ा",
+            "कुत्ते": "कुत्ता",
+        }
+        for surface, expected in cases.items():
+            assert guess_noun_lemma(surface, client=iwn_client) == expected
+
+    def test_already_direct_case_form_is_returned_unchanged(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        assert guess_noun_lemma("चाबी", client=iwn_client) == "चाबी"
+
+    def test_unrecognized_word_falls_back_to_surface_form(
+        self, iwn_client: IndoWordNetClient
+    ) -> None:
+        assert guess_noun_lemma("zzzznotaword123", client=iwn_client) == "zzzznotaword123"

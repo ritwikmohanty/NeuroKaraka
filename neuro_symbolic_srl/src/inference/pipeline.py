@@ -102,6 +102,29 @@ class SRLPipeline:
         ).to(self.device)
         self.crf = LinearChainCRF(num_labels=len(self.label_list)).to(self.device)
 
+    def load_checkpoint(self, path: Path) -> None:
+        """Load weights saved by ``scripts/train.py``'s ``SRLModel.state_dict()``.
+
+        ``SRLModel`` and this pipeline both name their submodules ``encoder``,
+        ``role_scorer``, ``wsd_head``, ``crf``, so the checkpoint's prefixed
+        keys are simply regrouped and loaded into the matching submodule.
+        """
+        state_dict = torch.load(path, map_location=self.device, weights_only=True)
+        submodules = {
+            "encoder": self.encoder,
+            "role_scorer": self.role_scorer,
+            "wsd_head": self.wsd_head,
+            "crf": self.crf,
+        }
+        for name, module in submodules.items():
+            prefix = f"{name}."
+            sub_state = {
+                key[len(prefix):]: value
+                for key, value in state_dict.items()
+                if key.startswith(prefix)
+            }
+            module.load_state_dict(sub_state)
+
     def parse(
         self,
         tokens: List[str],
