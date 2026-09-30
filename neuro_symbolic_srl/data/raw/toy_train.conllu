@@ -1,0 +1,49 @@
+# sent_id = 1
+# text = चाबी ने ताला खोला
+# predicate_synset_id = 10852
+# Note: चाबी carries the ergative postposition ने (surface case), but Karaka
+# is a semantic-role layer, not a surface-case one — the instrument of
+# opening is Karana (k3) regardless of which postposition attaches to it.
+# A real Paninian treebank would annotate it this way; the neural model's
+# job (corrected at inference by the ontology mask) is to learn not to
+# over-rely on ने as a surface cue for k1/ARG0.
+1	चाबी	चाबी	NOUN	_	_	4	k3	_	_
+2	ने	ने	ADP	_	_	1	lwg__psp	_	_
+3	ताला	ताला	NOUN	_	_	4	k2	_	_
+4	खोला	खोलना	VERB	_	_	0	root	_	_
+
+# sent_id = 2
+# text = सेब को बच्चे ने खाया
+# predicate_synset_id = 13868
+1	सेब	सेब	NOUN	_	_	5	k2	_	_
+2	को	को	ADP	_	_	1	lwg__psp	_	_
+3	बच्चे	बच्चा	NOUN	_	_	5	k1	_	_
+4	ने	ने	ADP	_	_	3	lwg__psp	_	_
+5	खाया	खाना	VERB	_	_	0	root	_	_
+
+# sent_id = 3
+# text = पुलिस ने दूरबीन से चोर को देखा
+# predicate_synset_id = 6229
+1	पुलिस	पुलिस	NOUN	_	_	7	k1	_	_
+2	ने	ने	ADP	_	_	1	lwg__psp	_	_
+3	दूरबीन	दूरबीन	NOUN	_	_	7	k3	_	_
+4	से	से	ADP	_	_	3	lwg__psp	_	_
+5	चोर	चोर	NOUN	_	_	7	k2	_	_
+6	को	को	ADP	_	_	5	lwg__psp	_	_
+7	देखा	देखना	VERB	_	_	0	root	_	_
+
+# sent_id = 4
+# text = बच्चे ने सेब खाया
+# predicate_synset_id = 13868
+1	बच्चे	बच्चा	NOUN	_	_	4	k1	_	_
+2	ने	ने	ADP	_	_	1	lwg__psp	_	_
+3	सेब	सेब	NOUN	_	_	4	k2	_	_
+4	खाया	खाना	VERB	_	_	0	root	_	_
+
+# sent_id = 5
+# text = लड़की ने किताब पढ़ी
+# predicate_synset_id = 11726
+1	लड़की	लड़की	NOUN	_	_	4	k1	_	_
+2	ने	ने	ADP	_	_	1	lwg__psp	_	_
+3	किताब	किताब	NOUN	_	_	4	k2	_	_
+4	पढ़ी	पढ़ना	VERB	_	_	0	root	_	_

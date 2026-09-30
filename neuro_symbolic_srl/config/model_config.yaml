@@ -1,0 +1,67 @@
+# Model architecture hyperparameters for the Neuro-Symbolic SRL engine.
+# Values follow Section 2 of the specification (context.txt) exactly where the
+# math fixes a number (hidden_dim=512, dropout=0.33, 3-layer BiLSTM), and use
+# standard production-sane defaults elsewhere.
+
+encoder:
+  # ai4bharat/indic-bert is a gated HF repo as of this writing (403 without
+  # manual access approval) — verified empirically during Phase 2. Using
+  # MuRIL instead: a fast WordPiece tokenizer with correct is_split_into_words
+  # / word_ids() subword alignment, same 768-dim hidden size, openly
+  # accessible. Switch back once/if indic-bert access is granted.
+  backbone_name: "google/muril-base-cased"
+  backbone_hidden_dim: 768
+  freeze_backbone: false
+  max_seq_len: 128
+
+morphology:
+  num_case_markers: 10                         # null_case(0) + ne, ko, se, ka, ke, ki, mein, par, tak
+  morph_embedding_dim: 64
+  num_clitic_tags: 7                           # null_clitic(0) + ही, भी, तो, सा, भर, मात्र
+  clitic_embedding_dim: 16
+  num_voice_aspect_tags: 4                      # active, passive, causative, unmarked
+  voice_aspect_embedding_dim: 16
+
+predicate_indicator:
+  embedding_dim: 16
+
+bilstm:
+  num_layers: 3
+  hidden_dim: 512                               # per-direction; concatenated output = 2 * hidden_dim
+  dropout: 0.33
+  bidirectional: true
+
+wsd_head:
+  gloss_encoder_name: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+  gloss_embedding_dim: 768
+  projection_dim: 512
+  max_candidate_senses: 12
+
+role_scorer:
+  mlp_hidden_dim: 512
+  activation: "gelu"
+  dropout: 0.2
+  # pairwise input = [h_i ; h_p ; (h_i - h_p) ; h_i ⊙ h_p] -> 4 * (2*bilstm.hidden_dim)
+
+crf:
+  label_set:
+    - "O"
+    - "B-ARG0"
+    - "I-ARG0"
+    - "B-ARG1"
+    - "I-ARG1"
+    - "B-ARG2"
+    - "I-ARG2"
+    - "B-ARGM-INS"
+    - "I-ARGM-INS"
+    - "B-ARGM-LOC"
+    - "I-ARGM-LOC"
+    - "B-ARGM-TMP"
+    - "I-ARGM-TMP"
+    - "B-ARGM-GOL"
+    - "I-ARGM-GOL"
+    - "B-ARGM-SRC"
+    - "I-ARGM-SRC"
+  mask_negative_value: -10000.0
+
+seed: 42

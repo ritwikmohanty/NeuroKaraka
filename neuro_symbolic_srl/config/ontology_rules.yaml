@@ -1,0 +1,91 @@
+# Paninian Karaka -> PropBank role mapping, and the selectional-restriction
+# rules consumed by src/ontology/mask_generator.py (Phase 3) to build the
+# Ontology Masking Matrix M described in Section 2.4 of context.txt.
+
+karaka_to_propbank:
+  k1: "ARG0"        # Karta - Agent
+  k2: "ARG1"        # Karma - Patient/Theme
+  k3: "ARGM-INS"     # Karana - Instrument (falls back to ARG2 if k3 is a core argument of the frame)
+  k4: "ARGM-GOL"     # Sampradana - Beneficiary/Recipient
+  k5: "ARGM-SRC"     # Apadaana - Source
+  k7p: "ARGM-LOC"    # Sthanadhikarana - Place/Locus
+  k7t: "ARGM-TMP"    # Kaladhikarana - Time/Temporal
+
+# Postposition -> case-marker categorical ID (used by morphology_extractor.py)
+case_markers:
+  "ने": { id: 1, case: "ergative", roles_favored: ["ARG0"] }
+  "को": { id: 2, case: "accusative_dative", roles_favored: ["ARG1", "ARGM-GOL"] }
+  "से": { id: 3, case: "instrumental_ablative", roles_favored: ["ARGM-INS", "ARGM-SRC"] }
+  "का": { id: 4, case: "genitive" }
+  "के": { id: 5, case: "genitive" }
+  "की": { id: 6, case: "genitive" }
+  "में": { id: 7, case: "locative", roles_favored: ["ARGM-LOC"] }
+  "पर": { id: 8, case: "locative", roles_favored: ["ARGM-LOC"] }
+  "तक": { id: 9, case: "terminative", roles_favored: ["ARGM-LOC", "ARGM-TMP"] }
+  null_case: { id: 0, case: "direct" }
+
+# Discourse/focus clitics -> categorical ID (separate embedding table from
+# case_markers, since a token can carry a clitic independently of its case,
+# e.g. "बच्चे ने ही" = ergative noun + emphatic clitic on the postposition).
+clitics:
+  "ही": { id: 1, function: "emphatic" }
+  "भी": { id: 2, function: "additive" }
+  "तो": { id: 3, function: "topic" }
+  "सा": { id: 4, function: "approximative" }
+  "भर": { id: 5, function: "restrictive" }
+  "मात्र": { id: 6, function: "restrictive" }
+  null_clitic: { id: 0, function: "none" }
+
+# Verbs (lemma) whose ARG0 requires an intentional/agentive (animate) subject.
+# Used by mask_generator.py: if the ARG0 candidate token fails is_animate()
+# and the predicate lemma is in this list, M(i, B-ARG0)=M(i, I-ARG0)=mask_negative_value.
+intentional_transitive_verbs:
+  - "देखना"     # to see
+  - "सोचना"     # to think
+  - "लिखना"     # to write
+  - "खोलना"     # to open
+  - "खाना"      # to eat
+  - "पढ़ना"     # to read
+  - "बनाना"     # to make
+  - "मारना"     # to hit/kill
+  - "बोलना"     # to speak
+  - "सुनना"     # to hear
+
+selectional_restrictions:
+  arg0_requires_animate: true
+  argm_loc_requires_location_or_locative_case: true
+  argm_tmp_requires_temporal_entity: true
+  uniqueness_constraints:
+    - "ARG0"
+    - "ARG1"
+
+# NOTE on hypernym_categories: the free pyiwn 0.0.5 IndoWordNet data dump only
+# records a HYPERNYMY relation for ~9% of synsets (verified empirically), so
+# hypernym_engine.py cannot rely on chain traversal to a root category node
+# alone. These keyword lists are matched against BOTH a synset's own
+# gloss/lemma text and its (possibly empty) hypernym chain, which is why each
+# list carries a few common surface synonyms in addition to the canonical
+# category term named in the spec.
+# Regex patterns (checked in addition to hypernym_categories.animate's plain
+# keywords) that catch the extremely common IndoWordNet Hindi gloss idiom for
+# profession/role nouns: a relative-clause "one who does X" definition (e.g.
+# चोर = "वह जो चोरी करता हो", पुलिस = "...रक्षा करने वाला सिपाही..."). Plain
+# keyword matching misses these because the gloss never says चेतन/मानव/
+# व्यक्ति outright — it just describes the action the person performs.
+# Verified empirically: both चोर and पुलिस (needed for the "पुलिस ने दूरबीन से
+# चोर को देखा" verification sentence) fail the keyword-only check without this.
+animate_agentive_patterns:
+  - "वह\\s*जो.*(करता|करती|करते)"
+  - "(करने|रखने)\\s*वाला"
+  - "(करने|रखने)\\s*वाली"
+  - "(करने|रखने)\\s*वाले"
+
+hypernym_categories:
+  animate: ["चेतन", "जीव", "मानव", "प्राणी", "संतान", "व्यक्ति", "मनुष्य", "पशु", "जानवर"]
+  inanimate: ["निर्जीव", "अमूर्त", "वस्तु"]
+  # NOTE: "क्षेत्र" was deliberately excluded — it commonly means "a field of
+  # expertise/knowledge" in gloss text (e.g. "विशेष क्षेत्र में ज्ञान"), not a
+  # physical place, and caused false positives (e.g. बच्चा) during testing.
+  location: ["स्थान", "भूगोलीय", "जगह"]
+  time: ["समय", "काल"]
+  instrument: ["उपकरण", "साधन", "यंत्र", "औज़ार"]

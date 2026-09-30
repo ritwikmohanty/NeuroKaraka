@@ -1,0 +1,40 @@
+# Training hyperparameters for the multi-task CRF + WSD objective.
+# L_total = L_CRF + lambda_wsd * L_WSD   (Section 2.5 / Phase 5 of context.txt)
+
+data:
+  train_path: "data/processed/train.jsonl"
+  val_path: "data/processed/val.jsonl"
+  test_path: "data/processed/test.jsonl"
+  batch_size: 32
+  eval_batch_size: 64
+  num_workers: 2
+
+optimizer:
+  name: "AdamW"
+  backbone_lr: 2.0e-5                # IndicBERT / MuRIL layers
+  head_lr: 1.0e-3                    # BiLSTM, MLP role scorer, CRF transition matrix
+  weight_decay: 0.01
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+
+schedule:
+  warmup_ratio: 0.1
+  decay: "cosine"
+
+loop:
+  num_epochs: 30
+  early_stopping_patience: 5
+  early_stopping_metric: "val_macro_f1"
+  eval_every_n_epochs: 1
+  gradient_accumulation_steps: 1
+
+loss:
+  lambda_wsd: 0.4
+
+logging:
+  log_every_n_steps: 50
+  checkpoint_dir: "checkpoints/"
+  save_best_only: true
+
+seed: 42
+device: "cuda_if_available"

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuro-symbolic-srl"
+version = "0.1.0"
+description = "Neuro-Symbolic Semantic Role Labeling & Ambiguity Resolution Engine for Hindi, grounded in IndoWordNet."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Yashveer Singh" }]
+
+dependencies = [
+    "torch>=2.1",
+    "transformers>=4.38",
+    "pyiwn>=0.0.5",
+    "seqeval>=1.2.2",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.5",
+    "onnx>=1.15",
+    "onnxruntime>=1.17",
+    "pyyaml>=6.0",
+    "numpy>=1.26",
+    "sentence-transformers>=2.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["src*", "api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
